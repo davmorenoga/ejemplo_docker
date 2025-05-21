@@ -1,6 +1,6 @@
-name: Build an Push Docker Image
+name: Build and Push Docker image
 
-On:
+on:
   push:
     branches: [main]
 
@@ -13,26 +13,23 @@ jobs:
       packages: write
 
     steps:
-      -uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      -name: Login to GHCR
+      - name: Login to GHCR
         run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GH_USERNAME }} --password-stdin
 
-      -name: Build and push image
+      - name: Build and push image
         run: |
           docker build -t ghcr.io/${{ secrets.GH_USERNAME }}/fastapi-app:latest .
-          docker psuh ghcr.io/${{ secrets.GH_USERNAME }}/fastapi-app:latest
-
-
+          docker push ghcr.io/${{ secrets.GH_USERNAME }}/fastapi-app:latest
   deploy:
     needs: build
-    runs on: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
-
       - name: SSH into EC2 and deploy container
-        uses: appleboy/ssh-action@0.1.10
-        with: 
+        uses: appleboy/ssh-action@v0.1.10
+        with:
           host: ${{ secrets.EC2_IP }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.AWS_ACCESS_PEM }}
@@ -41,4 +38,4 @@ jobs:
             docker pull ghcr.io/${{ secrets.GH_USERNAME }}/fastapi-app:latest
             docker stop fastapi-app || true
             docker rm fastapi-app || true
-            docker run -d -p 8000:8000 --name fastapi-app ghcr.io/${{ secrets.GH_USERNAME }}/fastapi-app:latest
+            docker run -d -p 8000:8000 --name fastapi-app ghcr.io/${{ secrets.GH_USERNAME }}/fastapi-app:latest 
